@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Stage Plot Web App</title>
+  <title>Stage Plot Web App - 3D Mode</title>
 
-  <!-- Example Google Fonts -->
+  <!-- Google Fonts (Optional) -->
   <link
     href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
     rel="stylesheet"
@@ -18,7 +18,6 @@
     <aside class="sidebar">
       <h2>Stage Items</h2>
       <div class="item-list">
-        <!-- Example items you can add to the stage -->
         <div class="item" draggable="true" data-type="mic">Microphone</div>
         <div class="item" draggable="true" data-type="stand">Mic Stand</div>
         <div class="item" draggable="true" data-type="amp">Guitar Amp</div>
@@ -27,18 +26,31 @@
         <div class="item" draggable="true" data-type="monitor">Floor Monitor</div>
       </div>
 
+      <!-- Buttons for layout -->
       <button id="saveLayout" class="btn">Save Layout</button>
       <button id="loadLayout" class="btn">Load Layout</button>
+
+      <!-- Toggle 3D Mode -->
+      <button id="toggle3D" class="btn">Switch to 3D</button>
     </aside>
 
-    <!-- Main stage area -->
+    <!-- Main 2D stage area -->
     <main class="stage" id="stage">
       <p class="stage-label">Drag items here</p>
     </main>
+
+    <!-- 3D Canvas (initially hidden) -->
+    <div class="stage-3d" id="stage3D">
+      <canvas id="threeCanvas"></canvas>
+    </div>
   </div>
 
-  <!-- Pop-up or modal for future extended features (Optional) -->
+  <!-- Load THREE.js from CDN -->
+  <script src="https://unpkg.com/three@0.152.2/build/three.min.js"></script>
+  <!-- Optionally, OrbitControls for camera navigation -->
+  <script src="https://unpkg.com/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
 
+  <!-- Main script -->
   <script src="script.js"></script>
 </body>
 </html>
