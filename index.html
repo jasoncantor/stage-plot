@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Stage Plot Web App - 3D Mode</title>
+  <title>Stage Plot Web App - 3D + Export PDF</title>
 
   <!-- Google Fonts (Optional) -->
   <link
@@ -32,6 +32,9 @@
 
       <!-- Toggle 3D Mode -->
       <button id="toggle3D" class="btn">Switch to 3D</button>
+
+      <!-- Export to PDF -->
+      <button id="exportPDF" class="btn">Export as PDF</button>
     </aside>
 
     <!-- Main 2D stage area -->
@@ -45,10 +48,12 @@
     </div>
   </div>
 
-  <!-- Load THREE.js from CDN -->
+  <!-- Three.js -->
   <script src="https://unpkg.com/three@0.152.2/build/three.min.js"></script>
-  <!-- Optionally, OrbitControls for camera navigation -->
   <script src="https://unpkg.com/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
+  <!-- html2canvas + jsPDF (for PDF export) -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <!-- Main script -->
   <script src="script.js"></script>

@@ -1,27 +1,29 @@
-// Global array to store the items placed on the 2D stage
-let stageItems = [];
+// -------------------  Global Data  ------------------- //
+let stageItems = []; // store items placed on the 2D stage
+let is3DMode = false; // track current mode
 
+// -------------------  2D Elements  ------------------- //
 const stage = document.getElementById("stage");
 const itemList = document.querySelectorAll(".item");
 const saveBtn = document.getElementById("saveLayout");
 const loadBtn = document.getElementById("loadLayout");
 const toggle3DBtn = document.getElementById("toggle3D");
+const exportPDFBtn = document.getElementById("exportPDF");
+
+// -------------------  3D Elements  ------------------- //
 const stage3DContainer = document.getElementById("stage3D");
+let scene, camera, renderer, controls;
+let stagePlane;
 
-// =============  2D MODE  ============= //
-
-/********************************************
- * DRAG FROM SIDEBAR
- ********************************************/
+// --------------------------------------------------------
+//  1) Drag and drop from sidebar to 2D stage
+// --------------------------------------------------------
 itemList.forEach((item) => {
   item.addEventListener("dragstart", (e) => {
     e.dataTransfer.setData("text/plain", e.target.dataset.type);
   });
 });
 
-/********************************************
- * DROP ON STAGE
- ********************************************/
 stage.addEventListener("dragover", (e) => {
   e.preventDefault();
 });
@@ -31,7 +33,7 @@ stage.addEventListener("drop", (e) => {
   const itemType = e.dataTransfer.getData("text/plain");
 
   if (itemType) {
-    // Create a new DOM element for the dropped item
+    // Create a new DOM element
     const newItem = document.createElement("div");
     newItem.classList.add("stage-item");
     newItem.setAttribute("data-type", itemType);
@@ -41,32 +43,27 @@ stage.addEventListener("drop", (e) => {
     const stageRect = stage.getBoundingClientRect();
     const offsetX = e.clientX - stageRect.left;
     const offsetY = e.clientY - stageRect.top;
-
     newItem.style.left = offsetX + "px";
     newItem.style.top = offsetY + "px";
 
-    // Add drag functionality
+    // Draggable
     makeDraggable(newItem);
 
-    // Add it to the stage
+    // Append to stage
     stage.appendChild(newItem);
 
-    // Save to global array
-    const newId = Date.now(); // unique ID
+    // Save item data
+    const newId = Date.now();
     newItem.dataset.itemId = newId;
-
     stageItems.push({
       id: newId,
       type: itemType,
       x: offsetX,
-      y: offsetY
+      y: offsetY,
     });
   }
 });
 
-/********************************************
- * MAKE STAGE ITEMS DRAGGABLE
- ********************************************/
 function makeDraggable(element) {
   let isDragging = false;
   let offsetX = 0;
@@ -81,15 +78,15 @@ function makeDraggable(element) {
 
   document.addEventListener("mousemove", (e) => {
     if (!isDragging) return;
-
     const stageRect = stage.getBoundingClientRect();
+
     const x = e.clientX - stageRect.left - offsetX;
     const y = e.clientY - stageRect.top - offsetY;
 
     element.style.left = x + "px";
     element.style.top = y + "px";
 
-    // Update in stageItems array
+    // Update stageItems
     const itemId = element.dataset.itemId;
     updateStageItem(itemId, x, y);
   });
@@ -109,9 +106,9 @@ function updateStageItem(itemId, x, y) {
   });
 }
 
-/********************************************
- * SAVE / LOAD LAYOUT (localStorage Example)
- ********************************************/
+// --------------------------------------------------------
+//  2) Save / Load Layout (using localStorage demo)
+// --------------------------------------------------------
 saveBtn.addEventListener("click", () => {
   localStorage.setItem("stageLayout", JSON.stringify(stageItems));
   alert("Layout saved!");
@@ -124,11 +121,11 @@ loadBtn.addEventListener("click", () => {
     return;
   }
 
+  // Clear current items
   stageItems = JSON.parse(savedData);
-  // Clear existing items from the DOM
   stage.innerHTML = '<p class="stage-label">Drag items here</p>';
-  
-  // Recreate each item in the DOM
+
+  // Recreate items in the DOM
   stageItems.forEach((item) => {
     const el = document.createElement("div");
     el.classList.add("stage-item");
@@ -144,60 +141,55 @@ loadBtn.addEventListener("click", () => {
   alert("Layout loaded!");
 });
 
-// =============  3D MODE  ============= //
-
-// Three.js variables
-let scene, camera, renderer, controls;
-let stagePlane;
-
-// On page load, init the Three.js scene once
+// --------------------------------------------------------
+//  3) Three.js Setup for 3D Mode
+// --------------------------------------------------------
 window.addEventListener("load", init3D);
 
 function init3D() {
   const canvas = document.getElementById("threeCanvas");
 
-  // Create Scene
+  // Create scene, camera
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xaaaaaa);
 
-  // Create Camera (Perspective)
-  // Alternatively, you could use an OrthographicCamera if you prefer.
   camera = new THREE.PerspectiveCamera(
-    45,          // FOV
-    canvas.clientWidth / canvas.clientHeight, // Aspect
-    0.1,         // Near
-    1000         // Far
+    45,
+    canvas.clientWidth / canvas.clientHeight,
+    0.1,
+    1000
   );
   camera.position.set(0, 200, 300);
 
-  // Create Renderer
+  // Create renderer
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setSize(canvas.clientWidth, canvas.clientHeight);
 
-  // OrbitControls (for easy camera rotation/panning)
+  // OrbitControls
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0, 0);
 
-  // A simple directional light
+  // Lights
   const light = new THREE.DirectionalLight(0xffffff, 1);
   light.position.set(100, 200, 100);
   scene.add(light);
 
-  // Ambient light
   const ambient = new THREE.AmbientLight(0xffffff, 0.3);
   scene.add(ambient);
 
-  // Create a plane to represent the stage in 3D
+  // Plane to represent stage
   const planeGeometry = new THREE.PlaneGeometry(400, 300);
-  const planeMaterial = new THREE.MeshPhongMaterial({ color: 0x2c3e50, side: THREE.DoubleSide });
+  const planeMaterial = new THREE.MeshPhongMaterial({
+    color: 0x2c3e50,
+    side: THREE.DoubleSide,
+  });
   stagePlane = new THREE.Mesh(planeGeometry, planeMaterial);
-  stagePlane.rotation.x = -Math.PI / 2; // Lay it flat (horizontal)
+  stagePlane.rotation.x = -Math.PI / 2; // horizontal
   scene.add(stagePlane);
 
   animate();
 }
 
-// Keep rendering the scene
 function animate() {
   requestAnimationFrame(animate);
   if (controls) controls.update();
@@ -206,81 +198,126 @@ function animate() {
   }
 }
 
-/********************************************
- * Add Items to the 3D Scene
- ********************************************/
+// Rebuild the 3D scene from current stageItems
 function update3DScene() {
-  // Remove old items (if any) from the scene
-  // (We only keep the stagePlane and lights, so let's remove anything that's a "mesh" but not the plane)
+  // remove old 3D items (except plane, lights)
   scene.traverse((obj) => {
     if (obj.isMesh && obj !== stagePlane) {
       scene.remove(obj);
     }
   });
 
-  // For each item in stageItems, add a small 3D box or shape
+  // create a small box for each stage item
   stageItems.forEach((item) => {
-    // Basic geometry to represent an item
     const geometry = new THREE.BoxGeometry(20, 20, 20);
-    const color = getColorForItemType(item.type);
-    const material = new THREE.MeshPhongMaterial({ color });
+    const material = new THREE.MeshPhongMaterial({ color: getColorForItemType(item.type) });
     const box = new THREE.Mesh(geometry, material);
 
-    // Convert 2D stage coordinates to 3D plane coordinates
-    // Our plane is 400 x 300 in size, we can assume 2D stage is that scale or ratio
-    // If your 2D stage is e.g. 800px wide, 2D X=400 => 3D X=some fraction
-    // For simplicity, do a direct mapping with an offset so center is (0,0)
+    // map 2D positions (x,y) -> 3D plane coords (x, z)
+    const planeWidth = 400;
+    const planeHeight = 300;
 
-    const planeWidth = 400;  // matches plane geometry
-    const planeHeight = 300; // matches plane geometry
-    // The 2D "x,y" in stageItems is from top-left corner. 3D plane center is (0,0).
-    // Let's assume the top-left of the plane is (-planeWidth/2, 0, planeHeight/2).
-    
-    const stageWidth = stage.offsetWidth;   // actual stage pixel width
-    const stageHeight = stage.offsetHeight; // actual stage pixel height
+    const stageWidth = stage.offsetWidth;
+    const stageHeight = stage.offsetHeight;
 
-    // Convert item.x (0 to stageWidth) into a range of -planeWidth/2 to +planeWidth/2
     const mappedX = (item.x / stageWidth) * planeWidth - planeWidth / 2;
-    // Convert item.y (0 to stageHeight) into a range of +planeHeight/2 down to -planeHeight/2
-    // (notice we invert y because 2D top->bottom = negative -> positive in 3D)
     const mappedZ = planeHeight / 2 - (item.y / stageHeight) * planeHeight;
 
-    box.position.set(mappedX, 10, mappedZ); // y=10 so it floats slightly above the plane
+    box.position.set(mappedX, 10, mappedZ);
     scene.add(box);
   });
 }
 
-// Simple color selector by item type
 function getColorForItemType(type) {
   switch (type) {
-    case "mic": return 0x9b59b6;     // Purple
-    case "stand": return 0x2ecc71;   // Green
-    case "amp": return 0xc0392b;     // Red
-    case "keys": return 0x16a085;    // Teal
-    case "drums": return 0xf39c12;   // Orange
-    case "monitor": return 0xe74c3c; // Light Red
-    default: return 0x3498db;        // Blue
+    case "mic":
+      return 0x9b59b6; // Purple
+    case "stand":
+      return 0x2ecc71; // Green
+    case "amp":
+      return 0xc0392b; // Red
+    case "keys":
+      return 0x16a085; // Teal
+    case "drums":
+      return 0xf39c12; // Orange
+    case "monitor":
+      return 0xe74c3c; // Light Red
+    default:
+      return 0x3498db; // Blue
   }
 }
 
-/********************************************
- * TOGGLE BETWEEN 2D & 3D
- ********************************************/
-let is3DMode = false;
+// --------------------------------------------------------
+//  4) Toggle between 2D & 3D
+// --------------------------------------------------------
 toggle3DBtn.addEventListener("click", () => {
   is3DMode = !is3DMode;
   if (is3DMode) {
-    // Hide 2D stage, show 3D container
     stage.style.display = "none";
     stage3DContainer.style.display = "block";
     toggle3DBtn.textContent = "Switch to 2D";
-
-    // Update the 3D scene with the current stageItems
-    update3DScene();
+    update3DScene(); // rebuild 3D objects
   } else {
-    // Show 2D stage, hide 3D container
     stage.style.display = "block";
     stage3DContainer.style.display = "none";
     toggle3DBtn.textContent = "Switch to 3D";
   }
 });
+
+// --------------------------------------------------------
+//  5) Export as PDF (html2canvas + jsPDF)
+// --------------------------------------------------------
+exportPDFBtn.addEventListener("click", exportToPDF);
+
+async function exportToPDF() {
+  // We'll capture whichever view is currently visible
+  // (the 2D stage or the 3D canvas)
+  if (!is3DMode) {
+    // 2D mode: capture the stage DIV
+    const stageEl = document.getElementById("stage");
+    await captureAndDownloadPDF(stageEl, "StageLayout-2D.pdf");
+  } else {
+    // 3D mode: capture the 3D canvas
+    const threeCanvas = document.getElementById("threeCanvas");
+    await captureAndDownloadPDF(threeCanvas, "StageLayout-3D.pdf");
+  }
+}
+
+async function captureAndDownloadPDF(element, filename = "StageLayout.pdf") {
+  // 1) Use html2canvas to capture the element
+  const canvas = await html2canvas(element, {
+    backgroundColor: null, // keep transparent background if any
+    scale: 2,             // increase resolution if desired
+  });
+
+  // 2) Convert the canvas to an image data URL
+  const imgData = canvas.toDataURL("image/png");
+
+  // 3) Create a new jsPDF instance (portrait, A4)
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF("p", "pt", "a4");
+
+  // 4) Calculate dimensions so it fits A4 nicely
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = pdf.internal.pageSize.getHeight();
+
+  // We'll keep aspect ratio from the canvas
+  const imgWidth = canvas.width;
+  const imgHeight = canvas.height;
+  const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+
+  const imgScaledWidth = imgWidth * ratio;
+  const imgScaledHeight = imgHeight * ratio;
+
+  // 5) Add the image to PDF and save
+  pdf.addImage(
+    imgData,
+    "PNG",
+    (pdfWidth - imgScaledWidth) / 2, // center horizontally
+    (pdfHeight - imgScaledHeight) / 2, // center vertically
+    imgScaledWidth,
+    imgScaledHeight
+  );
+
+  pdf.save(filename);
+}
